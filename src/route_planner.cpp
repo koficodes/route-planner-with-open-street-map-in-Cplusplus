@@ -1,5 +1,6 @@
 #include "route_planner.h"
 #include <algorithm>
+#include<vector>
 
 RoutePlanner::RoutePlanner(RouteModel &model, float start_x, float start_y, float end_x, float end_y): m_Model(model) {
     // Convert inputs to percentage:
@@ -37,16 +38,15 @@ float RoutePlanner::CalculateHValue(RouteModel::Node const *node) {
 
 void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
     current_node->FindNeighbors();
-    for(auto i : current_node->neighbors)
-    {
-        i->parent = current_node;
-        i->h_value = CalculateHValue(i);
-        i->g_value = current_node->g_value + 1;
-        i->visited = true;
-        this->open_list.push_back(i);
+    for(auto neighbor : current_node->neighbors)
+    {   
+        neighbor->parent = current_node;
+        neighbor->h_value = CalculateHValue(neighbor);
+        neighbor->g_value = current_node->g_value + current_node->distance(*neighbor);
+        neighbor->visited = true;
+        this->open_list.push_back(neighbor);
     }
     
-
 }
 
 
@@ -82,12 +82,19 @@ RouteModel::Node *RoutePlanner::NextNode() {
 
 std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node *current_node) {
     // Create path_found vector
-    distance = 0.0f;
     std::vector<RouteModel::Node> path_found;
+    auto cNode = current_node;
 
-    // TODO: Implement your solution here.
+    while(cNode){
+        path_found.push_back(*cNode);
+        if (cNode->parent) {
+            this->distance += cNode->distance(*cNode->parent);
+        }
+        cNode = cNode->parent;
+     }
 
-    distance *= m_Model.MetricScale(); // Multiply the distance by the scale of the map to get meters.
+    this->distance *= m_Model.MetricScale(); // Multiply the distance by the scale of the map to get meters.
+
     return path_found;
 
 }
